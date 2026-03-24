@@ -69,7 +69,7 @@ export default function Login() {
 
   const handleAuthSuccess = useCallback(
     (data) => {
-      // Your AuthContext login should store token/user/role etc.
+      // AuthContext stores the logged-in user state.
       login(data);
 
       const role = data?.user?.role;

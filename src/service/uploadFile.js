@@ -3,7 +3,7 @@ import axios from "axios";
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const uploadFileApi = async (payload, id) => {
-  const token = localStorage.getItem("token");
+  // const token = localStorage.getItem("token");
   const url = id ? `${BASE_URL}upload/${id}` : `${BASE_URL}upload`;
   const method = id ? "put" : "post";
 
@@ -12,10 +12,11 @@ export const uploadFileApi = async (payload, id) => {
       method,
       url,
       data: payload,
+      withCredentials: true,
       headers: {
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-        "ngrok-skip-browser-warning": "true"
+          // Authorization: `Bearer ${token}`,
+        "ngrok-skip-browser-warning": "true",
       },
     });
 
