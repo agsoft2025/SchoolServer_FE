@@ -1,4 +1,5 @@
 import axios from "axios";
+import { deleteCookie } from "./cookies";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -39,8 +40,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
       // optional auto logout
-      localStorage.removeItem("user");
-// localStorage.clear();
+      deleteCookie("user");
       window.location.href = "/login";
     }
 
