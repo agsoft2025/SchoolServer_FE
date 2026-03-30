@@ -32,6 +32,7 @@ export const useUsersQuery = ({ page, limit }) =>
     onSuccess: () => {
       // 🔥 refresh users list automatically
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
     },
   });
 };
