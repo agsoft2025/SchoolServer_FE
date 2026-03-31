@@ -44,6 +44,7 @@ export const useCreateCanteenStockMutation = () => {
       // adjust queryKey if your list uses something else
       qc.invalidateQueries({ queryKey: ["inventory"] });
       qc.invalidateQueries({ queryKey: ["tuck-shop"] });
+      qc.invalidateQueries({ queryKey: ["canteen-inventory"] });
     },
   });
 };
