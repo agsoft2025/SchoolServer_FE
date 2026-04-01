@@ -249,9 +249,6 @@ function CanteenInventory() {
                 alignItems: "center",
                 justifyContent: "center",
               },
-              "& .MuiDataGrid-cell[data-field='itemName']": {
-                justifyContent: "flex-start",
-              },
             }}
           />
         </Box>

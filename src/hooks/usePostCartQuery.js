@@ -20,6 +20,9 @@ export const useReversePostCartMutation = () => {
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pos-shop-cart"] });
+      // Refresh student info so the refunded balance updates
+      qc.invalidateQueries({ queryKey: ["studentExact"] });
+      qc.invalidateQueries({ queryKey: ["students"] });
     },
   });
 };
@@ -39,11 +42,14 @@ export const useCreatePosCartMutation = () => {
 
   return useMutation({
     mutationFn: (payload) => createPosShopCart(payload),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       // refresh items stock + recent purchases + student balance
       qc.invalidateQueries({ queryKey: ["tuck-shop"] });
       qc.invalidateQueries({ queryKey: ["pos-shop-cart"] });
-      qc.invalidateQueries({ queryKey: ["student"] });
+      
+      // Invalidate the exact queries so that the UI can refetch the updated student info
+      qc.invalidateQueries({ queryKey: ["studentExact"] });
+      qc.invalidateQueries({ queryKey: ["students"] });
     },
   });
 };
