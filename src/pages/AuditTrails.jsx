@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSnackbar } from "notistack";
-import { Box, Typography, Chip, CircularProgress } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { Box, Chip } from "@mui/material";
 import { useAuditLogsQuery } from "../hooks/useAuditLogsQuery";
 
 const ACTION_BADGES = {
@@ -9,6 +10,10 @@ const ACTION_BADGES = {
     DELETE: "bg-rose-100 text-rose-800",
     READ: "bg-slate-100 text-slate-600",
     UPDATE_STOCK: "bg-amber-50 text-amber-700",
+    LOGIN: "bg-blue-100 text-blue-800",
+    LOGOUT: "bg-gray-100 text-gray-800",
+    GENERATE: "bg-purple-100 text-purple-800",
+    BULK_UPSERT: "bg-indigo-100 text-indigo-800",
 };
 
 const formatDate = (value) => {
@@ -16,44 +21,71 @@ const formatDate = (value) => {
     return new Date(value).toLocaleString();
 };
 
+
 export default function AuditTrails() {
     const { enqueueSnackbar } = useSnackbar();
-    const sentinelRef = useRef(null);
-    const lastFetchRef = useRef(0);
 
-    const {
-        data,
-        isLoading,
-        isError,
-        error,
-        isFetching,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-    } = useAuditLogsQuery();
+    // DataGrid uses 0-based page index
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
 
-    const pages = data?.pages || [];
-    const entries = useMemo(() => {
-        return pages
-            .flatMap((page) => (Array.isArray(page?.data) ? page.data : []))
-            .map((item) => ({
-                id: item._id,
-                user: item.username || item.userId?.username || "-",
-                role: item.actorRole || "-",
-                action: item.action || "READ",
-                description: item.description || "-",
-                model: item.targetModel || "-",
-                location: item.location_id
-                    ? [item.location_id.locationName, item.location_id.schoolName]
-                          .filter(Boolean)
-                          .join(" / ")
-                    : "-",
-                timestamp: item.createdAt,
-            }));
-    }, [pages]);
+    // API uses 1-based page
+    const apiPage = page + 1;
 
-    const infoMessage = pages[0]?.message;
+    const { data, isLoading, isError, error, isFetching } = useAuditLogsQuery({
+        page: apiPage,
+        limit: pageSize,
+    });
 
+    // ✅ rows exactly like your old table
+    const rows = useMemo(() => {
+        const list = data?.data ?? [];
+        return list.map((item, idx) => ({
+            id: item._id ?? `${apiPage}-${idx}`,
+            timestamp: item.createdAt,
+            username: item?.username || item?.userId?.username || "-",
+            role: item?.actorRole || "-",
+            targetModel: item?.targetModel || "-",
+            description: item?.description || "-",
+            action: item?.action || "-",
+            location: item?.location_id?.schoolName
+                ? `${item.location_id.locationName} / ${item.location_id.schoolName}`
+                : item?.location_id?.locationName || "-"
+        }));
+    }, [data, apiPage]);
+
+    const columns = useMemo(
+        () => [
+            {
+                field: "timestamp",
+                headerName: "Date",
+                width: 170,
+                renderCell: (params) => formatDate(params.value),
+            },
+            { field: "username", headerName: "User Name", flex: 1, minWidth: 140 },
+            { field: "role", headerName: "Role", width: 120 },
+            {
+                field: "action",
+                headerName: "Action",
+                width: 140,
+                renderCell: (params) => (
+                    <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
+                            ACTION_BADGES[params.value] || ACTION_BADGES.READ
+                        }`}
+                    >
+                        {params.value || "READ"}
+                    </span>
+                ),
+            },
+            { field: "targetModel", headerName: "Target Model", flex: 1, minWidth: 140 },
+            { field: "description", headerName: "Description", flex: 2, minWidth: 200 },
+            { field: "location", headerName: "Location", flex: 1, minWidth: 150 },
+        ],
+        []
+    );
+
+    // ✅ show error once (not on every render)
     useEffect(() => {
         if (isError) {
             enqueueSnackbar(error?.response?.data?.message || "Failed to load audit logs", {
@@ -62,95 +94,55 @@ export default function AuditTrails() {
         }
     }, [isError, error, enqueueSnackbar]);
 
-    useEffect(() => {
-        if (!sentinelRef.current || !hasNextPage) return;
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-                    const now = Date.now();
-                    if (now - lastFetchRef.current < 600) return;
-                    lastFetchRef.current = now;
-                    fetchNextPage();
-                }
-            },
-            { rootMargin: "200px" }
-        );
-        observer.observe(sentinelRef.current);
-        return () => observer.disconnect();
-    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-    const emptyMessage =
-        infoMessage || (isError ? error?.response?.data?.message : "No activity yet.");
+    // ✅ Use your backend pagination total (same as table)
+    const total = data?.pagination?.total ?? 0;
 
     return (
-        <div className="w-full bg-gray-50 p-3 md:p-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-bold text-gray-900">Audit Trails</h1>
-                    <p className="text-gray-600 text-sm">Readable timeline of every backend action.</p>
+        <div className="w-full bg-gray-50 p-1 md:p-5">
+            <div className="max-w-8xl mx-auto space-y-6">
+                <div className="space-y-2">
+                    <h1 className="text-2xl md:text-2xl font-bold text-gray-900 pl-2">Audit Trails</h1>
+                    <p className="text-gray-600 text-sm md:text-base pl-2">
+                        Monitor system statistics and recent activities
+                    </p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow p-5 space-y-4">
-                    {isLoading ? (
-                        <div className="flex items-center gap-3">
-                            <CircularProgress size={18} />
-                            <Typography variant="body2" color="text.secondary">
-                                Loading audit activity...
-                            </Typography>
+                <div className="bg-white rounded-xl shadow p-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="text-xs text-slate-500">
+                            {isFetching && !isLoading ? "Updating..." : ""}
                         </div>
-                    ) : null}
+                    </div>
 
-                    {isFetching && !isLoading ? (
-                        <Typography variant="body2" color="info.main" className="pl-2">
-                            Syncing latest activity...
-                        </Typography>
-                    ) : null}
+                    <Box sx={{ height: "calc(100vh - 300px)", width: "100%" }}>
+                        <DataGrid
+                            rows={rows}
+                            columns={columns}
+                            loading={isLoading || isFetching}
+                            pagination
+                            paginationMode="server"
+                            rowCount={total}
+                            pageSizeOptions={[10, 20, 50]}
+                            paginationModel={{ page, pageSize }}
+                            onPaginationModelChange={(model) => {
+                                const pageChanged = model.page !== page;
+                                const sizeChanged = model.pageSize !== pageSize;
 
-                    {entries.length === 0 ? (
-                        <Typography className="text-center text-gray-500 py-10">{emptyMessage}</Typography>
-                    ) : (
-                        <Box className="space-y-4 divide-y divide-slate-200">
-                            {entries.map((entry) => (
-                                <article key={entry.id} className="pt-3">
-                                    <div className="flex flex-wrap items-start justify-between gap-2">
-                                        <div>
-                                            <Typography className="font-medium text-slate-900">{entry.user}</Typography>
-                                            <Typography className="text-xs uppercase tracking-wider text-slate-500">
-                                                {entry.role}
-                                            </Typography>
-                                        </div>
-                                        <Chip
-                                            label={entry.action || "READ"}
-                                            className={`text-[10px] font-semibold uppercase ${
-                                                ACTION_BADGES[entry.action] || ACTION_BADGES.READ
-                                            }`}
-                                        />
-                                    </div>
-                                    <Typography className="text-base mt-2 text-slate-700">{entry.description}</Typography>
-                                    <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-2">
-                                        <span className="font-semibold">Model:</span>
-                                        <span>{entry.model}</span>
-                                        <span className="font-semibold">Location:</span>
-                                        <span>{entry.location}</span>
-                                        <span>{formatDate(entry.timestamp)}</span>
-                                    </div>
-                                </article>
-                            ))}
-                        </Box>
-                    )}
+                                if (sizeChanged) {
+                                    setPage(0);
+                                    setPageSize(model.pageSize);
+                                    return;
+                                }
 
-                    <div ref={sentinelRef} aria-hidden className="h-2" />
+                                if (pageChanged) {
+                                    setPage(model.page);
+                                }
+                            }}
+                            disableRowSelectionOnClick
+                            getRowId={(row) => row.id}
+                        />
 
-                    {isFetchingNextPage ? (
-                        <Typography variant="body2" color="text.secondary" className="text-center">
-                            Loading more...
-                        </Typography>
-                    ) : null}
-                    {!hasNextPage && entries.length > 0 ? (
-                        <Typography variant="body2" color="text.secondary" className="text-center">
-                            You are all caught up.
-                        </Typography>
-                    ) : null}
+                    </Box>
                 </div>
             </div>
         </div>
