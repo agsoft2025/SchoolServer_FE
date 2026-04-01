@@ -35,7 +35,11 @@ export default function TransactionHistory() {
                 ? t.products.reduce((sum, p) => sum + (p?.quantity || 0), 0)
                 : 0;
 
-            const amount = t.totalAmount || t.wageAmount || t.depositAmount || 0;
+            const baseAmount = t.totalAmount ?? t.depositAmount ?? t.wageAmount ?? 0;
+            const isReversedRecord = Boolean(
+                t.is_reversed || t.isReversed || t.status === "reversed"
+            );
+            const amount = isReversedRecord ? -Math.abs(baseAmount) : baseAmount;
 
             return {
                 id: t._id,
@@ -50,6 +54,8 @@ export default function TransactionHistory() {
                     t.is_reversed || t.isReversed || t.status === "reversed"
                         ? "reversed"
                         : t.status || "Completed",
+                isReversed: isReversedRecord,
+                reversalDate: t.updatedAt || t.createdAt,
                 raw: t,
             };
         });
@@ -143,6 +149,58 @@ export default function TransactionHistory() {
                 renderCell: (params) => {
                     const row = params.row;
                     const tx = row.raw;
+                    const isReversedCell = Boolean(row.isReversed);
+                    const reversalDateText = row.reversalDate ? formatDate(row.reversalDate) : null;
+
+                    if (isReversedCell) {
+                        const highlightClasses = "whitespace-normal break-words leading-5 py-2 rounded-md border border-red-100 bg-red-50 text-red-700";
+                        if (tx.source === "FINANCIAL") {
+                            const label = tx.transaction || tx.type || "Financial";
+                            return (
+                                <div className={highlightClasses}>
+                                    <div className="font-semibold text-sm text-red-600">Reversed {label}</div>
+                                    <div className="text-xs text-red-500 mt-1">
+                                        <b>Deposit Type:</b>{" "}
+                                        <span className="text-red-600">{tx.depositType || "-"}</span>
+                                    </div>
+                                    <div className="text-xs text-red-500">
+                                        <b>Deposit Name:</b>{" "}
+                                        <span className="text-red-600">{tx.depositName || "-"}</span>
+                                    </div>
+                                    {reversalDateText && (
+                                        <div className="text-xs text-red-500 mt-1">Reversed on {reversalDateText}</div>
+                                    )}
+                                    {tx.remarks && (
+                                        <div className="text-xs text-red-500 mt-1">{tx.remarks}</div>
+                                    )}
+                                </div>
+                            );
+                        }
+
+                        const reversedProducts = tx.products || [];
+                        return (
+                            <div className={highlightClasses}>
+                                <div className="font-semibold text-sm text-red-600">Reversed POS transaction</div>
+                                {reversedProducts.length ? (
+                                    reversedProducts.map((p, index) => (
+                                        <div key={`reversed-${index}-${p._id || p.productId?._id || ""}`}>
+                                            <del className="font-semibold text-xs text-red-600">
+                                                {p?.productId?.itemName || "-"}
+                                            </del>{" "}
+                                            <span className="text-red-500 text-xs">Ã— {p.quantity}</span>{" "}
+                                            <span className="text-red-400 text-xs">(â‚¹{p?.productId?.price || 0} each)</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-red-500">Product details unavailable</div>
+                                )}
+                                <div className="text-xs text-red-500 mt-1">Original total items: {row.totalItems}</div>
+                                {reversalDateText && (
+                                    <div className="text-xs text-red-500 mt-1">Reversed on {reversalDateText}</div>
+                                )}
+                            </div>
+                        );
+                    }
 
                     if (tx.source === "FINANCIAL") {
                         const isOnlinePayment = tx.depositType === "ONLINE_PAYMENT";

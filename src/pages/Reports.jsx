@@ -39,6 +39,18 @@ const reportTypes = [
     { id: 5, title: "Inventory", apiUrl: "reports/inventory-report" },
 ];
 
+const currencyFormatter = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+});
+
+const formatCurrency = (value) => {
+    const amount = Number(value ?? 0);
+    if (Number.isNaN(amount)) return currencyFormatter.format(0);
+    return currencyFormatter.format(amount);
+};
+
 export default function Reports() {
     const { enqueueSnackbar } = useSnackbar();
 
@@ -52,7 +64,7 @@ export default function Reports() {
     const [boardName, setBoardName] = useState("");
     const [filterByStudent, setFilterByStudent] = useState(false);
 
-    const { data: stats } = useQuickStatisticsQuery();
+    const { data: statsResponse, isLoading: statsLoading } = useQuickStatisticsQuery();
     const [studentSearch, setStudentSearch] = useState("");
     // pagination
     const [page, setPage] = useState(1);
@@ -73,6 +85,8 @@ export default function Reports() {
     const total = studentsRes?.total ?? studentsRes?.count ?? 0;
 
     const reportMutation = useGenerateReportMutation();
+    const quickStats = statsResponse?.data ?? {};
+    const formatStatsValue = (value) => (statsLoading ? "Loading..." : formatCurrency(value));
 
     /* =======================
        PAYLOAD
@@ -1060,7 +1074,9 @@ export default function Reports() {
                         <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200">
                             <div className="flex-1">
                                 <p className="text-sm text-gray-600 mb-1">Total System Balance</p>
-                                <p className="text-xl md:text-2xl font-bold text-gray-900">{stats?.data?.totalSystemBalance}</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-900">
+                                    {formatStatsValue(quickStats.totalSystemBalance)}
+                                </p>
                             </div>
                             <div className={`p-2 rounded-lg bg-blue-50 shrink-0 ml-3`}>
                                 <BarChart3 className={`h-5 w-5 md:h-6 md:w-6 text-blue-600`} />
@@ -1070,7 +1086,9 @@ export default function Reports() {
                         <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200">
                             <div className="flex-1">
                                 <p className="text-sm text-gray-600 mb-1">Monthly Deposits</p>
-                                <p className="text-xl md:text-2xl font-bold text-gray-900">{stats?.data?.monthluyDeposits}</p>
+                                <p className="text-xl md:text-2xl font-bold text-gray-900">
+                                    {formatStatsValue(quickStats.monthlyDeposits)}
+                                </p>
                             </div>
                             <div className={`p-2 rounded-lg bg-blue-50 shrink-0 ml-3`}>
                                 <TrendingUp className={`h-5 w-5 md:h-6 md:w-6 text-blue-600`} />
