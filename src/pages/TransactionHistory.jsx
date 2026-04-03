@@ -187,8 +187,8 @@ export default function TransactionHistory() {
                                             <del className="font-semibold text-xs text-red-600">
                                                 {p?.productId?.itemName || "-"}
                                             </del>{" "}
-                                            <span className="text-red-500 text-xs">Ã— {p.quantity}</span>{" "}
-                                            <span className="text-red-400 text-xs">(â‚¹{p?.productId?.price || 0} each)</span>
+                                            <span className="text-red-500 text-xs">× {p.quantity}</span>{" "}
+                                            <span className="text-red-400 text-xs">(₹{p?.productId?.price || 0} each)</span>
                                         </div>
                                     ))
                                 ) : (
