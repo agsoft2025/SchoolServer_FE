@@ -56,45 +56,50 @@ export default function LayoutContainer() {
           {/* Right side */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             {/* Location */}
-            {user?.role === "ADMIN" && (
-              <div className="flex flex-col items-center">
-                <Button variant="text" onClick={() => setLocationModal(true)}>
-                  <MapPin
-                    className={`w-5 h-5 ${
-                      selectedLocation?.locationName
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  />
-                </Button>
 
-                {selectedLocation?.locationName ? (
-                  <span className="text-sm hidden lg:flex font-bold text-green-700 max-w-[120px] truncate">
-                    {selectedLocation.locationName}
-                  </span>
-                ) : (
-                  <span className="text-sm hidden lg:flex font-bold text-red-500">
-                    No Location Selected
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="flex flex-col items-center">
+              <Button variant="text" onClick={() => setLocationModal(true)}
+                disabled={user?.role !== "ADMIN"}
+                sx={{
+                  "&.Mui-disabled": {
+                    pointerEvents: "auto",
+                    cursor: "not-allowed"
+                  }
+                }}
+              >
+                <MapPin
+                  className={`w-5 h-5 ${selectedLocation?.locationName
+                    ? "text-green-500"
+                    : "text-red-500"
+                    }`}
+                />
+              </Button>
+
+              {selectedLocation?.locationName ? (
+                <span className="text-sm hidden lg:flex font-bold text-green-700 max-w-[120px] truncate">
+                  {selectedLocation.locationName}
+                </span>
+              ) : (
+                <span className="text-sm hidden lg:flex font-bold text-red-500">
+                  No Location Selected
+                </span>
+              )}
+            </div>
+
 
             {/* DB Location */}
             {user?.role === "ADMIN" && (
               <div className="flex flex-col items-center">
                 <Button variant="text" onClick={() => setDbModal(true)}>
                   <DatabaseZap
-                    className={`w-5 h-5 ${
-                      dbPath ? "text-green-500" : "text-red-500"
-                    }`}
+                    className={`w-5 h-5 ${dbPath ? "text-green-500" : "text-red-500"
+                      }`}
                   />
                 </Button>
 
                 <span
-                  className={`font-bold hidden lg:flex text-sm ${
-                    dbPath ? "text-green-700" : "text-red-500"
-                  }`}
+                  className={`font-bold hidden lg:flex text-sm ${dbPath ? "text-green-700" : "text-red-500"
+                    }`}
                 >
                   DB Location
                 </span>

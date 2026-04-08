@@ -6,8 +6,10 @@ import { DataGrid } from '@mui/x-data-grid';
 import ConfirmDeleteDialog from '../components/commonModals/ConfirmDeleteDialog';
 import UserFormDialog from '../components/user/UserFormDialog';
 import FaceRecognition from '../components/faceIdComponent/FaceID';
+import { useSnackbar } from 'notistack';
 
 const UserManagement = () => {
+    const { enqueueSnackbar } = useSnackbar();
 
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -37,18 +39,25 @@ const UserManagement = () => {
     };
 
     const confirmDelete = async () => {
-        if (!selectedUser?._id) return;
+        if (!selectedUser) {
+            enqueueSnackbar("Error: No user selected", { variant: "error" });
+            return;
+        }
+        if (!selectedUser._id && !selectedUser.id) {
+            enqueueSnackbar("Error: User ID is missing", { variant: "error" });
+            return;
+        }
+        
         try {
-            await deleteMutation.mutateAsync(selectedUser._id);
-            setDeleteOpen(false);
+            const idToDelete = selectedUser._id || selectedUser.id;
+            await deleteMutation.mutateAsync(idToDelete);
+            
             enqueueSnackbar("User deleted successfully", { variant: "success" });
-
             closeDeleteModal();
         } catch (error) {
-            enqueueSnackbar(
-                error?.response?.data?.message || "Failed to delete user",
-                { variant: "error" }
-            );
+            console.error("Delete failed:", error);
+            const errMsg = error?.response?.data?.message || error.message || "Failed to delete user";
+            enqueueSnackbar(errMsg, { variant: "error" });
         }
     };
 

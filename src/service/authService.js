@@ -8,3 +8,13 @@ export const loginService = async (payload) => {
   const response = await api.post("user/login", payload);
   return response.data;
 };
+
+export const sessionService = async () => {
+  const response = await api.get("user/session");
+  return response.data;
+};
+
+export const logoutService = async () => {
+  const response = await api.post("user/logout");
+  return response.data;
+};

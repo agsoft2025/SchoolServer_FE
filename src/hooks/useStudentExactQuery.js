@@ -53,7 +53,8 @@ export const useDeleteStudentMutation = () => {
     onSuccess: () => {
       // refresh student lists / tables
       queryClient.invalidateQueries({ queryKey: ["students"] });
-      // if you have another key like ["student"], invalidate that too if needed
+      // 🔥 refresh users list since deleted student deletes user
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };

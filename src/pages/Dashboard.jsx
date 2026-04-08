@@ -7,6 +7,16 @@ import {
 } from "lucide-react";
 import { useDashboardQuery } from "../hooks/useDashboardQuery";
 
+const getStatusChip = (tx) => {
+  const isReversed = Boolean(tx?.isReversed || tx?.details?.is_reversed);
+  const baseStatus = tx?.status || tx?.details?.status || "Completed";
+  const label = isReversed ? "Reversed" : baseStatus;
+  const classes = isReversed
+    ? "bg-red-100 text-red-700"
+    : "bg-emerald-100 text-emerald-700";
+  return { label, classes };
+};
+
 function StatCard({ title, value, icon: Icon, color }) {
   return (
     <div
@@ -135,35 +145,38 @@ export default function Dashboard() {
 
           {/* ✅ Mobile view (cards) */}
           <div className="md:hidden p-3 space-y-3">
-            {dash?.recentTransactions?.map((tx) => (
-              <div key={tx._id} className="border rounded-xl p-3 bg-white">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">
-                      {tx.details?.student_id?.student_name || "-"}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate">
-                      Reg: {tx.details?.student_id?.registration_number || "-"}
-                    </p>
+            {dash?.recentTransactions?.map((tx) => {
+              const statusChip = getStatusChip(tx);
+              return (
+                <div key={tx._id} className="border rounded-xl p-3 bg-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">
+                        {tx.details?.student_id?.student_name || "-"}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        Reg: {tx.details?.student_id?.registration_number || "-"}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="font-bold text-green-600">₹ {tx.totalAmount}</p>
+                      <p className="text-xs text-slate-500">{tx.type}</p>
+                    </div>
                   </div>
 
-                  <div className="shrink-0 text-right">
-                    <p className="font-bold text-green-600">₹ {tx.totalAmount}</p>
-                    <p className="text-xs text-slate-500">{tx.type}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs ${statusChip.classes}`}>
+                      {statusChip.label}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {new Date(tx.createdAt).toLocaleDateString()}{" "}
+                      {new Date(tx.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
                 </div>
-
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
-                    {tx.details?.status || "OK"}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {new Date(tx.createdAt).toLocaleDateString()}{" "}
-                    {new Date(tx.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* ✅ Desktop/tablet view (table) */}
@@ -181,28 +194,31 @@ export default function Dashboard() {
               </thead>
 
               <tbody>
-                {dash?.recentTransactions?.map((tx) => (
-                  <tr key={tx._id} className="border-t hover:bg-slate-50 transition">
-                    <td className="p-4 font-medium">
-                      {tx.details?.student_id?.student_name}
-                    </td>
-                    <td className="p-4">
-                      {tx.details?.student_id?.registration_number}
-                    </td>
-                    <td className="p-4 font-semibold text-green-600">
-                      ₹ {tx.totalAmount}
-                    </td>
-                    <td className="p-4">{tx.type}</td>
-                    <td className="p-4">
-                      <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs">
-                        {tx.details?.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-slate-500">
-                      {new Date(tx.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {dash?.recentTransactions?.map((tx) => {
+                  const statusChip = getStatusChip(tx);
+                  return (
+                    <tr key={tx._id} className="border-t hover:bg-slate-50 transition">
+                      <td className="p-4 font-medium">
+                        {tx.details?.student_id?.student_name}
+                      </td>
+                      <td className="p-4">
+                        {tx.details?.student_id?.registration_number}
+                      </td>
+                      <td className="p-4 font-semibold text-green-600">
+                        ₹ {tx.totalAmount}
+                      </td>
+                      <td className="p-4">{tx.type}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${statusChip.classes}`}>
+                          {statusChip.label}
+                        </span>
+                      </td>
+                      <td className="p-4 text-slate-500">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
