@@ -17,16 +17,18 @@ export default function LayoutContainer() {
 
   const { selectedLocation } = useLocationCtx();
   const { dbPath } = useDBCtx();
+  const currentYear = new Date().getFullYear();
+  const appVersion = import.meta.env.VITE_APP_VERSION || "0.0.0";
 
   return (
-    <div className="min-h-screen bg-slate-100 md:grid md:grid-cols-[240px_1fr]">
+    <div className="h-screen overflow-hidden bg-slate-100 md:grid md:grid-cols-[240px_1fr]">
       {/* Sidebar (desktop + mobile drawer) */}
       <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
       {/* Main */}
-      <div className="flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-col h-screen overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-2 md:px-5 min-w-0">
+        <header className="h-16 shrink-0 bg-white border-b flex items-center justify-between px-2 md:px-5 min-w-0">
           {/* Left side */}
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
             {/* Hamburger (mobile only) */}
@@ -108,9 +110,16 @@ export default function LayoutContainer() {
           </div>
         </header>
 
-        <main className="flex-1 m-0 md:m-4 min-w-0">
+        <main className="min-w-0 flex-1 overflow-y-auto px-0 md:px-4 py-0 md:py-4">
           <Outlet />
         </main>
+
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-6 py-3 text-xs text-slate-600">
+          <div className="flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+            <span>&copy; {currentYear} School Management Portal. All rights reserved.</span>
+            <span className="font-medium text-slate-700">Version {appVersion}</span>
+          </div>
+        </footer>
       </div>
 
       <LocationDialog
