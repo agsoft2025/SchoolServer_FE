@@ -15,6 +15,7 @@ import {
   UserRoundPen,
   ShoppingBag,
   ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 
 const linkBase = "block rounded-lg px-3 py-2 text-sm font-medium transition";
@@ -33,6 +34,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
     { title: "Transaction History", icon: ArrowLeftRight, path: "/transaction-history", roles: ["ADMIN"] },
     { title: "Canteen POS", icon: Store, path: "/tuck-shop-pos", roles: ["ADMIN", "POS"] },
     { title: "Reports", icon: FileText, path: "/reports", roles: ["ADMIN"] },
+    { title: "SMS Center", icon: MessageSquare, path: "/sms-center", roles: ["ADMIN"] },
     { title: "Bulk Operations", icon: Upload, path: "/bulk-operations", roles: ["ADMIN"] },
     { title: "User Management", icon: UserRoundPen, path: "/user-management", roles: ["ADMIN"] },
     { title: "Inventory", icon: ShoppingBag, path: "/inventory", roles: ["ADMIN"] },

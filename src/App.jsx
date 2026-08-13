@@ -12,6 +12,7 @@ import TransactionHistory from "./pages/TransactionHistory";
 import FinancialManagement from "./pages/FinanicalManagement";
 import Reports from "./pages/Reports";
 import BulkOperation from "./pages/BulkOperation";
+import SmsCenter from "./pages/SmsCenter";
 import UserManagement from "./pages/UserManagement";
 import CanteenPosSystem from "./pages/CanteenPosSystem";
 import Inventory from "./pages/Inventory";
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/financial-management" element={<FinancialManagement />} />
             <Route path="/transaction-history" element={<TransactionHistory />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/sms-center" element={<SmsCenter />} />
             <Route path="/bulk-operations" element={<BulkOperation />} />
             <Route path="/audit-trails" element={<AuditTrails />} />
             <Route path="/inventory" element={<Inventory />} />
