@@ -114,7 +114,7 @@ export default function SmsCenter() {
 
             <Button
               variant="contained"
-              className="mt-4 rounded-xl text-white bg-primary!"
+              className="mt-4 rounded-xl text-white! bg-primary!"
               disabled={!message.trim() || !hasSelection}
               onClick={() => setConfirmOpen(true)}
             >
