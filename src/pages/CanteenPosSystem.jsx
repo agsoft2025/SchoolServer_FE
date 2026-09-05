@@ -14,7 +14,6 @@ import { useStudentExactQuery } from "../hooks/useStudentExactQuery";
 import useDebounce from "../hooks/useDebounce";
 
 import PosLeftCard from "../components/pos/PosLeftCard";
-import { useLocationCtx } from "../context/LocationContext";
 import FaceRecognition from "../components/faceIdComponent/FaceID";
 import { fetchStudentByFace } from "../service/studentService";
 
@@ -31,78 +30,82 @@ const CanteenPosSystem = () => {
 
     const {
         data: purchasesData,
-        error: purchasesError,
+        // error: purchasesError,
         isLoading: purchasesLoading,
         isFetching: purchasesFetching,
     } = usePostCartQuery({ refetchKey });
-    const { selectedLocation } = useLocationCtx();
 
     // IMPORTANT:
     // If your hook returns array directly, keep purchasesData || []
     // If your hook returns { success, data }, keep purchasesData?.data || []
-    const purchases = purchasesData?.data || purchasesData || [];
 
     const reverseMutation = useReversePostCartMutation();
     const fetchingFaceRef = useRef(false);
     const selectedInmateIdRef = useRef(null);
 
+
     useEffect(() => {
-        if (!faceidData) return;
+        if (!faceidData || fetchingFaceRef.current) return;
 
-        // ✅ stop repeated calls if FaceRecognition emits multiple times
-        if (fetchingFaceRef.current) return;
         fetchingFaceRef.current = true;
-
         let alive = true;
 
-        (async () => {
+        const fetchStudent = async () => {
             try {
                 const res = await fetchStudentByFace(faceidData);
 
                 if (!alive) return;
 
                 const student = res?.data;
+
                 if (student?._id) {
                     selectedInmateIdRef.current = student._id;
                     setStudentSearchValue(student.registration_number || "");
                 } else {
-                    enqueueSnackbar(res?.message || "Student not found", { variant: "warning" });
+                    enqueueSnackbar(
+                        res?.message || "Student not found",
+                        { variant: "warning" }
+                    );
                 }
             } catch (err) {
                 if (!alive) return;
-                console.log(err);
+
+                console.error(err);
 
                 enqueueSnackbar(
                     err?.response?.data?.message || "Face ID fetch failed",
                     { variant: "error" }
                 );
             } finally {
-                if (!alive) return;
-
-                // ✅ close modal + clear to prevent infinite effect triggers
-                setFaceIdData(null);
-                setOpenFaceId(false);
-
-                // ✅ allow new scan next time
                 fetchingFaceRef.current = false;
+
+                if (alive) {
+                    setFaceIdData(null);
+                    setOpenFaceId(false);
+                }
             }
-        })();
+        };
+
+        fetchStudent();
 
         return () => {
             alive = false;
         };
-    }, [faceidData]);
+    }, [faceidData, enqueueSnackbar]);
 
     const filteredPurchases = useMemo(() => {
+        const purchases = purchasesData?.data || purchasesData || [];
         const s = purchaseSearch.trim().toLowerCase();
+
         if (!s) return purchases;
 
-        return (purchases || []).filter((p) => {
+        return purchases.filter((p) => {
             const reg = (p?.student_id?.registration_number || "").toLowerCase();
             const name = (p?.student_id?.student_name || "").toLowerCase();
+
             return reg.includes(s) || name.includes(s);
         });
-    }, [purchases, purchaseSearch]);
+    }, [purchasesData, purchaseSearch]);
 
     const handleReverse = async (purchaseId) => {
         try {

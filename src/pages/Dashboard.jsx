@@ -17,13 +17,13 @@ const getStatusChip = (tx) => {
   return { label, classes };
 };
 
-function StatCard({ title, value, icon: Icon, color }) {
+function StatCard({ title, value, icon, color }) {
   return (
     <div
       className={`relative overflow-hidden rounded-2xl p-3 md:p-5 shadow-md bg-linear-to-br ${color}`}
     >
       <div className="absolute right-4 top-4 opacity-20">
-        <Icon className="w-12 md:w-16 h-12 md:h-16" />
+        {icon && <icon className="w-12 md:w-16 h-12 md:h-16" />}
       </div>
 
       <p className="text-sm text-white/80">{title}</p>

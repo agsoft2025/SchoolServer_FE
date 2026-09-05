@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Box, Button, IconButton, TextField, Paper, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -12,6 +12,12 @@ import useDebounce from "../../hooks/useDebounce";
 import { useDeleteInventoryMutation, useInventoryQuery } from "../../hooks/useInventoryQuery";
 import StoreInventoryDialog from "./StoreInventoryDialog";
 
+const getErrorMessage = (err) =>
+  err?.response?.data?.message ||
+  err?.response?.data?.data?.message ||
+  err?.message ||
+  "Something went wrong";
+
 function StoreInventory() {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -21,7 +27,7 @@ function StoreInventory() {
   const [open, setOpen] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
 
-  const [refetchKey, setRefetchKey] = useState(0);
+  const [refetchKey] = useState(0);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -45,10 +51,17 @@ function StoreInventory() {
 
   const { data: apiRes, isLoading, isFetching, error } = useInventoryQuery(queryParams);
 
-  const list = apiRes?.data || apiRes || [];
-  const totalCount = apiRes?.total || apiRes?.count || 0;
+  const totalCount =
+    apiRes?.total ||
+    apiRes?.count ||
+    (Array.isArray(apiRes?.data)
+      ? apiRes.data.length
+      : Array.isArray(apiRes)
+        ? apiRes.length
+        : 0);
 
   const rows = useMemo(() => {
+    const list = apiRes?.data || apiRes || [];
     const arr = Array.isArray(list) ? list : [];
     return arr.map((record, idx) => {
       const vp = record?.vendorPurchase || {};
@@ -64,19 +77,27 @@ function StoreInventory() {
         _raw: record,
       };
     });
-  }, [list, page, pageSize]);
+  }, [apiRes, page, pageSize]);
 
   const deleteMutation = useDeleteInventoryMutation();
 
-  const deleteItem = async (id) => {
-    try {
-      const res = await deleteMutation.mutateAsync(id);
-      enqueueSnackbar(res?.message || res?.data?.message || "Deleted successfully", { variant: "success" });
-      setRefetchKey((p) => p + 1);
-    } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || "Delete failed", { variant: "error" });
-    }
-  };
+  const deleteItem = useCallback(
+    async (idOrItemNo) => {
+      try {
+        const res = await deleteMutation.mutateAsync(idOrItemNo);
+
+        enqueueSnackbar(
+          res?.message || res?.data?.message || "Deleted successfully",
+          {
+            variant: "success",
+          }
+        );
+      } catch (err) {
+        enqueueSnackbar(getErrorMessage(err), { variant: "error" });
+      }
+    },
+    [deleteMutation, enqueueSnackbar]
+  );
 
   const columns = useMemo(
     () => [
@@ -167,7 +188,7 @@ function StoreInventory() {
         ),
       },
     ],
-    [deleteMutation.isPending]
+    [deleteItem,deleteMutation.isPending]
   );
 
   return (

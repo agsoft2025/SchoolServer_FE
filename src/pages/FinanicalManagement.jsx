@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSnackbar } from "notistack";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
@@ -49,7 +49,6 @@ export default function FinancialManagement() {
     formState: { errors },
     setValue,
     reset,
-    watch,
     control
   } = useForm({
     resolver: yupResolver(schema),
@@ -65,8 +64,10 @@ export default function FinancialManagement() {
   });
 
   // watch the exactData field (student search)
-  const exactData = watch("exactData");
-
+  const exactData = useWatch({
+    control,
+    name: "exactData",
+  });
   const debouncedStudentId = useDebounce(exactData, 600);
   // student search query
   const studentQuery = useStudentExactQuery(debouncedStudentId);

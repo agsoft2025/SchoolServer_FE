@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AuthContext } from "./AuthContextValue";
 import { deleteCookie, getCookie, setCookie } from "../lib/cookies";
 import { logoutService, sessionService } from "../service/authService";
 
-const AuthContext = createContext(null);
 const USER_COOKIE_KEY = "user";
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days
 
@@ -92,10 +92,4 @@ export function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
 }

@@ -36,8 +36,10 @@ function StoreInventoryDialog({
         error: optionsError,
     } = useCanteenItemOptionsQuery(open);
 
-    const options = optionsRes?.data || optionsRes || [];
-
+    const options = useMemo(
+        () => optionsRes?.data || optionsRes || [],
+        [optionsRes]
+    );
     const upsertMutation = useUpsertInventoryMutation();
     const deleteItemMutation = useDeleteInventoryItemMutation();
 

@@ -39,9 +39,9 @@ const AuditLogCard = ({ item }) => {
 
     const username = item?.username || item?.userId?.username || "System/Unknown User";
     const role = item?.actorRole || "-";
-    const locationInfo = item?.location_id?.schoolName
-        ? `${item.location_id.locationName} / ${item.location_id.schoolName}`
-        : item?.location_id?.locationName || "-";
+    // const locationInfo = item?.location_id?.schoolName
+    //     ? `${item.location_id.locationName} / ${item.location_id.schoolName}`
+    //     : item?.location_id?.locationName || "-";
 
     const hasChanges = item?.changes && Object.keys(item.changes).length > 0;
 
@@ -154,7 +154,7 @@ export default function AuditTrails() {
         }
     }, [isError, error, enqueueSnackbar]);
 
-    const total = data?.pagination?.total || 0;
+    // const total = data?.pagination?.total || 0;
     const totalPages = data?.pagination?.totalPages || 0;
     const logs = data?.data || [];
 

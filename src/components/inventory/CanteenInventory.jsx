@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Box, Button as MUIButton, TextField, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Edit, Plus, Trash2 } from "lucide-react";
@@ -46,31 +46,43 @@ function CanteenInventory() {
   } = useCanteenInventoryQuery(queryParams);
 
   // adapt to your backend response shape
-  const list = apiRes?.data || apiRes || [];
-  const totalCount = apiRes?.total || apiRes?.count || list?.length || 0;
+  const totalCount =
+    apiRes?.total ||
+    apiRes?.count ||
+    (Array.isArray(apiRes?.data)
+      ? apiRes.data.length
+      : Array.isArray(apiRes)
+        ? apiRes.length
+        : 0);
 
   const deleteMutation = useDeleteCanteenItemMutation();
 
-  const deleteItem = async (idOrItemNo) => {
+  const deleteItem = useCallback(async (idOrItemNo) => {
     try {
       const res = await deleteMutation.mutateAsync(idOrItemNo);
-      enqueueSnackbar(res?.message || res?.data?.message || "Deleted successfully", {
-        variant: "success",
-      });
+
+      enqueueSnackbar(
+        res?.message || res?.data?.message || "Deleted successfully",
+        {
+          variant: "success",
+        }
+      );
     } catch (err) {
       enqueueSnackbar(getErrorMessage(err), { variant: "error" });
     }
-  };
+  }, [deleteMutation, enqueueSnackbar]);
 
   // ✅ flatten rows for DataGrid (stable + no valueGetter issues)
   const rows = useMemo(() => {
+    const list = apiRes?.data || apiRes || [];
     const arr = Array.isArray(list) ? list : [];
+
     return arr.map((item, idx) => ({
       ...item,
-      id: item?._id || item?.itemNo || `${page}-${idx}`, // DataGrid needs id
+      id: item?._id || item?.itemNo || `${page}-${idx}`,
       sno: page * pageSize + idx + 1,
     }));
-  }, [list, page, pageSize]);
+  }, [apiRes, page, pageSize]);
 
   const columns = useMemo(
     () => [
@@ -196,7 +208,7 @@ function CanteenInventory() {
         ),
       },
     ],
-    [deleteMutation.isPending]
+    [deleteItem,deleteMutation.isPending]
   );
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, TextField, InputAdornment } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Edit, Plus, Search, Trash2 } from "lucide-react";
@@ -8,7 +8,6 @@ import useDebounce from "../hooks/useDebounce";
 import { useDeleteStudentMutation, useStudentsQuery } from "../hooks/useStudentExactQuery";
 import StudentFormModal from "../components/student/StudentFormModal";
 import DummyProfile from "../assets/dummy.png";
-import { formatDate } from "../hooks/useFormatDate";
 import ConfirmDeleteDialog from "../components/commonModals/ConfirmDeleteDialog";
 
 // ✅ Face Component (render in parent)
@@ -39,10 +38,10 @@ export default function StudentManagement() {
     limit: pageSize,
   });
 
-  const list = data?.data ?? [];
-  const total = list?.[0]?.totalItems ?? 0;
+  const total = data?.data?.[0]?.totalItems ?? 0;
 
   const rows = useMemo(() => {
+    const list = data?.data ?? [];
     return list.map((s) => ({
       id: s._id,
       registration_number: s.registration_number || "-",
@@ -76,7 +75,7 @@ export default function StudentManagement() {
       user_id: s?.user_id,
       descriptor: s?.descriptor || [],
     }));
-  }, [list]);
+  }, [data]);
 
   const handleEdit = (row) => {
     setSelectedStudent(row);
@@ -236,7 +235,7 @@ export default function StudentManagement() {
 
       <StudentFormModal
         open={open}
-        onClose={() => {setOpen(false);setSelectedStudent(null);}}
+        onClose={() => { setOpen(false); setSelectedStudent(null); }}
         selectedStudent={selectedStudent}
         DummyProfile={DummyProfile}
         faceidModalOpen={faceidModalOpen}

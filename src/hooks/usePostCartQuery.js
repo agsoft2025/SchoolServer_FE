@@ -42,7 +42,7 @@ export const useCreatePosCartMutation = () => {
 
   return useMutation({
     mutationFn: (payload) => createPosShopCart(payload),
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       // refresh items stock + recent purchases + student balance
       qc.invalidateQueries({ queryKey: ["tuck-shop"] });
       qc.invalidateQueries({ queryKey: ["pos-shop-cart"] });

@@ -54,7 +54,7 @@ const UserFormDialog = ({ open, onClose, selectedUser, setFaceidModalOpen, faceI
             queryClient.removeQueries({ queryKey: ["userById", selectedUser._id] });
             setSelectedUser(null);
         }
-    }, [open, selectedUser?._id, queryClient]);
+    }, [open, selectedUser?._id, queryClient,setSelectedUser]);
 
 
     const userSchema = yup.object({

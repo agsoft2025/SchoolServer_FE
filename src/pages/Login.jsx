@@ -69,13 +69,12 @@ export default function Login() {
 
   const handleAuthSuccess = useCallback(
     (data) => {
-      // AuthContext stores the logged-in user state.
       login(data);
 
       const role = data?.user?.role;
       navigate(getRedirectPath(role), { replace: true });
     },
-    [enqueueSnackbar, login, navigate]
+    [login, navigate]
   );
 
   // ✅ Password login
@@ -111,7 +110,7 @@ export default function Login() {
     };
 
     run();
-  }, [faceidData]);
+  }, [faceidData, faceLoginMutation, handleAuthSuccess, enqueueSnackbar]);
 
   const loading = loginMutation.isPending || faceLoginMutation.isPending;
 
@@ -129,9 +128,8 @@ export default function Login() {
         {/* Username */}
         <label className="block text-sm font-medium mb-2">Username</label>
         <input
-          className={`w-full border rounded-lg p-3 mb-2 outline-none focus:ring-2 focus:ring-primary ${
-            errors.username ? "border-red-500" : "border-gray-300"
-          }`}
+          className={`w-full border rounded-lg p-3 mb-2 outline-none focus:ring-2 focus:ring-primary ${errors.username ? "border-red-500" : "border-gray-300"
+            }`}
           placeholder="Enter username"
           {...register("username")}
         />
@@ -142,9 +140,8 @@ export default function Login() {
         {/* Password */}
         <label className="block text-sm font-medium mb-2">Password</label>
         <div
-          className={`w-full border rounded-lg p-3 mb-2 flex items-center gap-2 ${
-            errors.password ? "border-red-500" : "border-gray-300"
-          }`}
+          className={`w-full border rounded-lg p-3 mb-2 flex items-center gap-2 ${errors.password ? "border-red-500" : "border-gray-300"
+            }`}
         >
           <input
             className="w-full outline-none bg-transparent"

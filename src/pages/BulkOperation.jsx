@@ -5,7 +5,7 @@ import { useSnackbar } from "notistack";
 import { useBulkUploadStudentsMutation, useDownloadSampleCsvMutation } from "../hooks/useBulkUploadMutation";
 import { useLocationCtx } from "../context/LocationContext";
 
-const BulkOperation = ({ location }) => {
+const BulkOperation = () => {
     const { enqueueSnackbar } = useSnackbar();
 
     const inmateInputRef = useRef(null);

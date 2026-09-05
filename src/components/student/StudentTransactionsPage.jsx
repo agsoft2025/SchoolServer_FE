@@ -18,12 +18,13 @@ export default function StudentTransactionsTable({ regNo = "STU002" }) {
   );
 
   const total = data?.total ?? 0;
-  const transactions = data?.transactions ?? [];
 
   // ⚠️ Adjust these fields based on actual transaction object keys
   const rows = useMemo(() => {
+    const transactions = data?.transactions ?? [];
+
     return transactions.map((t, idx) => ({
-      id: t?._id ?? `${apiPage}-${idx}`, // ✅ required
+      id: t?._id ?? `${apiPage}-${idx}`,
       sno: (apiPage - 1) * pageSize + (idx + 1),
       transactionId: t?.transaction_id ?? t?._id ?? "-",
       date: t?.createdAt ? new Date(t.createdAt).toLocaleString() : "-",
@@ -32,7 +33,7 @@ export default function StudentTransactionsTable({ regNo = "STU002" }) {
       status: t?.status ?? "-",
       remarks: t?.remarks ?? "-",
     }));
-  }, [transactions, apiPage, pageSize]);
+  }, [data, apiPage, pageSize]);
 
   const columns = useMemo(
     () => [

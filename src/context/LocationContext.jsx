@@ -1,90 +1,100 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useAuth } from "./AuthContext";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import { useAuth } from "./useAuth";
+import { LocationContext } from "./LocationContextValue";
 import { useLocationsQuery } from "../hooks/useLocationMutation";
 import { deleteCookie, getCookie, setCookie } from "../lib/cookies";
 
-const LocationContext = createContext(null);
 const LOCATION_COOKIE_KEY = "selectedLocation";
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30;
+
+const getStoredLocation = () => {
+  const saved = getCookie(LOCATION_COOKIE_KEY);
+
+  if (!saved) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(saved);
+  } catch {
+    deleteCookie(LOCATION_COOKIE_KEY);
+    return null;
+  }
+};
 
 export function LocationProvider({ children }) {
   const { isAuth, booting } = useAuth();
 
-  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [storedLocation, setStoredLocation] = useState(getStoredLocation);
 
   const locationsQuery = useLocationsQuery(isAuth && !booting);
 
-  // restore from cookie
+  const locations = useMemo(
+    () => locationsQuery.data?.data || [],
+    [locationsQuery.data]
+  );
+
+  const selectedLocation = useMemo(() => {
+    if (locationsQuery.isError) {
+      return null;
+    }
+
+    if (!Array.isArray(locations) || locations.length === 0) {
+      return storedLocation;
+    }
+
+    if (storedLocation?._id) {
+      return (
+        locations.find((location) => location._id === storedLocation._id) ||
+        locations[0]
+      );
+    }
+
+    return locations[0];
+  }, [locations, locationsQuery.isError, storedLocation]);
+
+  // Keep the cookie synchronized with the effective location.
   useEffect(() => {
-    const saved = getCookie(LOCATION_COOKIE_KEY);
-    if (saved) {
-      try {
-        setSelectedLocation(JSON.parse(saved));
-      } catch {
-        deleteCookie(LOCATION_COOKIE_KEY);
-      }
+    if (selectedLocation) {
+      setCookie(LOCATION_COOKIE_KEY, selectedLocation, {
+        maxAge: COOKIE_MAX_AGE_SEC,
+      });
+    } else if (locationsQuery.isError) {
+      deleteCookie(LOCATION_COOKIE_KEY);
+    }
+  }, [selectedLocation, locationsQuery.isError]);
+
+  const selectLocation = useCallback((loc) => {
+    setStoredLocation(loc);
+
+    if (loc) {
+      setCookie(LOCATION_COOKIE_KEY, loc, {
+        maxAge: COOKIE_MAX_AGE_SEC,
+      });
+    } else {
+      deleteCookie(LOCATION_COOKIE_KEY);
     }
   }, []);
 
-  // set default from API
-  useEffect(() => {
-    const list = locationsQuery.data?.data;
-    if (!Array.isArray(list) || list.length === 0) return;
-
-    // 1) if there is a selected location, refresh it from list (updates the cookie too)
-    if (selectedLocation?._id) {
-      const latest = list.find((x) => x._id === selectedLocation._id);
-
-      // if still exists, update state/cookie with the latest object
-      if (latest) {
-        // avoid unnecessary re-renders
-        const changed = JSON.stringify(latest) !== JSON.stringify(selectedLocation);
-        if (changed) {
-          setSelectedLocation(latest);
-          setCookie(LOCATION_COOKIE_KEY, latest, { maxAge: COOKIE_MAX_AGE_SEC });
-        }
-        return;
-      }
-    }
-
-    // 2) if no selection or it was deleted, pick first as default
-    const first = list[0];
-    setSelectedLocation(first);
-    setCookie(LOCATION_COOKIE_KEY, first, { maxAge: COOKIE_MAX_AGE_SEC });
-  }, [locationsQuery.data, selectedLocation?._id]);
-
-  useEffect(() => {
-    if (locationsQuery.isSuccess) {
-      const list = locationsQuery.data?.data;
-      if (!Array.isArray(list) || list.length === 0) {
-        if (selectedLocation) {
-          setSelectedLocation(null);
-          deleteCookie(LOCATION_COOKIE_KEY);
-        }
-      }
-    }
-    if (locationsQuery.isError) {
-      if (selectedLocation) {
-        setSelectedLocation(null);
-        deleteCookie(LOCATION_COOKIE_KEY);
-      }
-    }
-  }, [locationsQuery.data, locationsQuery.isSuccess, locationsQuery.isError, selectedLocation]);
-
-
-  const selectLocation = (loc) => {
-    setSelectedLocation(loc);
-    setCookie(LOCATION_COOKIE_KEY, loc, { maxAge: COOKIE_MAX_AGE_SEC });
-  };
-
   const value = useMemo(
     () => ({
-      locations: locationsQuery.data?.data || [],
+      locations,
       selectedLocation,
       selectLocation,
       loading: locationsQuery.isLoading,
     }),
-    [locationsQuery.data, selectedLocation]
+    [
+      locations,
+      selectedLocation,
+      selectLocation,
+      locationsQuery.isLoading,
+    ]
   );
 
   return (
@@ -93,5 +103,3 @@ export function LocationProvider({ children }) {
     </LocationContext.Provider>
   );
 }
-
-export const useLocationCtx = () => useContext(LocationContext);

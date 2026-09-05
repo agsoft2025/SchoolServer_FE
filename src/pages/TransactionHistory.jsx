@@ -19,10 +19,10 @@ export default function TransactionHistory() {
         limit: pageSize,
     });
 
-    const transactions = data?.transactions ?? [];
     const total = data?.count ?? 0;
 
     const rows = useMemo(() => {
+        const transactions = data?.transactions || [];
         return transactions.map((t) => {
             const studentName = t?.student_id?.student_name || "-";
             const regNo = t?.student_id?.registration_number || "-";
@@ -59,7 +59,7 @@ export default function TransactionHistory() {
                 raw: t,
             };
         });
-    }, [transactions]);
+    }, [data]);
 
     const columns = useMemo(
         () => [

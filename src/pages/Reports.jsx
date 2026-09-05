@@ -62,7 +62,7 @@ export default function Reports() {
     const [endDate, setEndDate] = useState("");
     const [student, setStudent] = useState(null);
     const [boardName, setBoardName] = useState("");
-    const [filterByStudent, setFilterByStudent] = useState(false);
+    const [filterByStudent] = useState(false);
 
     const { data: statsResponse, isLoading: statsLoading } = useQuickStatisticsQuery();
     const [studentSearch, setStudentSearch] = useState("");
@@ -82,7 +82,7 @@ export default function Reports() {
     // depends on your API shape:
     // either { data: [], total: number } OR direct array
     const students = studentsRes?.data ?? studentsRes ?? [];
-    const total = studentsRes?.total ?? studentsRes?.count ?? 0;
+    // const total = studentsRes?.total ?? studentsRes?.count ?? 0;
 
     const reportMutation = useGenerateReportMutation();
     const quickStats = statsResponse?.data ?? {};
@@ -221,12 +221,12 @@ export default function Reports() {
     };
 
     const escapeHtml = (value) =>
-        String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+    String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
     const createExcelBlobFromTable = ({ sheetName, headers, rows }) => {
         const safeSheetName = String(sheetName ?? "Sheet1").slice(0, 31);
