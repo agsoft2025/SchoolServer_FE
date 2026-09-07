@@ -1,66 +1,112 @@
-import { TextField, Chip } from "@mui/material";
+import { useCallback, useEffect, useMemo } from "react";
+import { TextField, MenuItem, CircularProgress } from "@mui/material";
+import { useSmsTemplatesQuery } from "../../hooks/useSmsQuery";
 
-const PLACEHOLDERS = [
-  { key: "student_name", label: "Student Name" },
-  { key: "father_name", label: "Father Name" },
-  { key: "mother_name", label: "Mother Name" },
-  { key: "registration_number", label: "Registration No." },
-  { key: "class_name", label: "Class" },
-  { key: "section", label: "Section" },
-  { key: "hostel_name", label: "Hostel" },
-  { key: "board_name", label: "Board" },
-];
-
-// GSM-7 default alphabet (simplified) — anything outside this falls back to Unicode
-// SMS encoding, which halves the per-segment character budget.
-const GSM_7_REGEX = /^[A-Za-z0-9 \r\n@£$¥èéùìòÇØøÅåÉÄÖÑÜ§¿äöñüà#¤%&'()*+,\-./:;<=>?_!"ÆæßÉ{}\n]*$/;
-
-const getSegmentInfo = (message) => {
-  const length = message.length;
-  const isGsm = GSM_7_REGEX.test(message);
-  const singleLimit = isGsm ? 160 : 70;
-  const multiLimit = isGsm ? 153 : 67;
-  const segments = length === 0 ? 0 : length <= singleLimit ? 1 : Math.ceil(length / multiLimit);
-
-  return { encoding: isGsm ? "GSM-7" : "Unicode", segments, length };
+// Student-sourced variables differ per recipient, so the preview shows a
+// readable token for them; 'input' variables use what staff typed.
+const buildPreview = (template, variables) => {
+  if (!template) return "";
+  let out = template.body;
+  (template.variables || []).forEach((v) => {
+    const token =
+      v.source === "input"
+        ? (variables?.[v.key] || "").trim() || `[${v.label.toLowerCase()}]`
+        : `[${v.source.replace(/_/g, " ")}]`;
+    out = out.split(`{{${v.key}}}`).join(token);
+  });
+  return out;
 };
 
-export default function MessageComposer({ value, onChange, disabled }) {
-  const { encoding, segments, length } = getSegmentInfo(value || "");
+const computeReady = (template, variables) =>
+  !!template &&
+  (template.variables || [])
+    .filter((v) => v.source === "input")
+    .every((v) => String(variables?.[v.key] || "").trim());
 
-  const insertPlaceholder = (key) => {
-    onChange(`${value || ""}{{${key}}}`);
-  };
+/**
+ * value: { templateId, variables:{ [key]: string } }
+ * onChange is called with { templateId, variables, ready, preview }
+ */
+export default function MessageComposer({ value, onChange, disabled }) {
+  const { templateId = "", variables = {} } = value || {};
+  const { data, isLoading } = useSmsTemplatesQuery();
+  const templates = useMemo(() => data?.data || [], [data]);
+
+  const template = useMemo(
+    () => templates.find((t) => String(t.id) === String(templateId)),
+    [templates, templateId]
+  );
+
+  const emit = useCallback(
+    (nextId, nextVars) => {
+      const tpl = templates.find((t) => String(t.id) === String(nextId));
+      onChange({
+        templateId: nextId ? String(nextId) : "",
+        variables: nextVars,
+        ready: computeReady(tpl, nextVars),
+        preview: buildPreview(tpl, nextVars),
+      });
+    },
+    [templates, onChange]
+  );
+
+  // Auto-select when exactly one approved template exists.
+  useEffect(() => {
+    if (!templateId && templates.length === 1) emit(templates[0].id, {});
+  }, [templates, templateId, emit]);
+
+  if (isLoading) return <CircularProgress size={20} />;
+
+  if (!templates.length)
+    return (
+      <p className="text-sm text-red-600">
+        No approved SMS templates are configured. Add one in the backend config (src/config/smsTemplates.js).
+      </p>
+    );
+
+  const inputVars = (template?.variables || []).filter((v) => v.source === "input");
 
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       <TextField
+        select
         fullWidth
-        multiline
-        minRows={4}
-        label="Message"
-        placeholder="Dear {{student_name}}, ..."
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        label="SMS template (DLT-approved)"
+        value={templateId}
+        onChange={(e) => emit(e.target.value, {})}
         disabled={disabled}
-      />
-
-      <div className="flex flex-wrap gap-2 mt-2">
-        {PLACEHOLDERS.map((placeholder) => (
-          <Chip
-            key={placeholder.key}
-            label={placeholder.label}
-            size="small"
-            onClick={() => insertPlaceholder(placeholder.key)}
-            disabled={disabled}
-            className="cursor-pointer"
-          />
+      >
+        {templates.map((t) => (
+          <MenuItem key={t.id} value={String(t.id)}>
+            {t.label}
+          </MenuItem>
         ))}
-      </div>
+      </TextField>
 
-      <p className="text-xs text-gray-500 mt-2">
-        {length} characters · {encoding} · {segments} segment{segments === 1 ? "" : "s"}
-      </p>
+      {inputVars.map((v) => (
+        <TextField
+          key={v.key}
+          fullWidth
+          multiline
+          minRows={2}
+          label={v.label}
+          value={variables[v.key] || ""}
+          onChange={(e) => emit(templateId, { ...variables, [v.key]: e.target.value })}
+          disabled={disabled}
+        />
+      ))}
+
+      {template && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-1">Preview</p>
+          <div className="bg-gray-50 border rounded-xl p-3 whitespace-pre-wrap text-sm text-gray-800">
+            {buildPreview(template, variables)}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Only the approved template content is sent. Bracketed fields are filled in per recipient.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

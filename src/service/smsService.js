@@ -7,6 +7,18 @@ export const getClassGroups = async (locationId) => {
   return res.data;
 };
 
+export const getHostelGroups = async (locationId) => {
+  const res = await api.get("sms/hostel-groups", {
+    params: locationId ? { location_id: locationId } : {},
+  });
+  return res.data;
+};
+
+export const getSmsTemplates = async () => {
+  const res = await api.get("sms/templates");
+  return res.data;
+};
+
 export const previewSmsRecipients = async (payload) => {
   const res = await api.post("sms/preview", payload);
   return res.data;

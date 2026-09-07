@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Tabs, Tab, Button, Paper } from "@mui/material";
-import { Users, User, GraduationCap, History as HistoryIcon } from "lucide-react";
+import { Users, User, GraduationCap, Building2, History as HistoryIcon } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { useLocationCtx } from "../context/LocationContext";
 import MessageComposer from "../components/sms/MessageComposer";
@@ -14,15 +14,18 @@ const TABS = [
   { key: "individual", label: "Individual", icon: User },
   { key: "bulk", label: "Bulk", icon: Users },
   { key: "classwise", label: "Classwise", icon: GraduationCap },
+  { key: "hostelwise", label: "Hostel", icon: Building2 },
   { key: "history", label: "History", icon: HistoryIcon },
 ];
+
+const EMPTY_COMPOSER = { templateId: "", variables: {}, ready: false, preview: "" };
 
 export default function SmsCenter() {
   const { enqueueSnackbar } = useSnackbar();
   const { selectedLocation } = useLocationCtx();
 
   const [activeTab, setActiveTab] = useState("individual");
-  const [message, setMessage] = useState("");
+  const [composer, setComposer] = useState(EMPTY_COMPOSER);
   const [selectionPayload, setSelectionPayload] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeBatchId, setActiveBatchId] = useState(null);
@@ -37,7 +40,8 @@ export default function SmsCenter() {
   const hasSelection =
     sendMode === "bulk" ||
     (sendMode === "individual" && !!selectionPayload.studentId) ||
-    (sendMode === "classwise" && (selectionPayload.classIds || []).length > 0);
+    (sendMode === "classwise" && (selectionPayload.classIds || []).length > 0) ||
+    (sendMode === "hostelwise" && (selectionPayload.hostelNames || []).length > 0);
 
   const previewQuery = useSmsPreviewQuery(previewPayload, { enabled: !!sendMode && hasSelection });
   const sendMutation = useSendSmsMutation();
@@ -51,7 +55,8 @@ export default function SmsCenter() {
     try {
       const res = await sendMutation.mutateAsync({
         mode: sendMode,
-        message,
+        templateId: composer.templateId,
+        variables: composer.variables,
         locationId: selectedLocation?._id,
         ...selectionPayload,
       });
@@ -59,7 +64,7 @@ export default function SmsCenter() {
       setConfirmOpen(false);
       setActiveBatchId(res?.batchId);
       setActiveTab("history");
-      setMessage("");
+      setComposer(EMPTY_COMPOSER);
       setSelectionPayload({});
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || "Failed to send SMS", { variant: "error" });
@@ -110,12 +115,12 @@ export default function SmsCenter() {
 
           <Paper className="rounded-2xl! p-4">
             <h3 className="font-semibold mb-3">Message</h3>
-            <MessageComposer value={message} onChange={setMessage} />
+            <MessageComposer value={composer} onChange={setComposer} />
 
             <Button
               variant="contained"
               className="mt-4 rounded-xl text-white! bg-primary!"
-              disabled={!message.trim() || !hasSelection}
+              disabled={!composer.ready || !hasSelection}
               onClick={() => setConfirmOpen(true)}
             >
               Review &amp; Send
@@ -131,7 +136,7 @@ export default function SmsCenter() {
         loading={sendMutation.isPending}
         count={previewQuery.data?.count ?? 0}
         sample={previewQuery.data?.sample ?? []}
-        message={message}
+        message={composer.preview}
         mode={sendMode}
       />
 

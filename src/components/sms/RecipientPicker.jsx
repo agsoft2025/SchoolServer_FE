@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { Autocomplete, TextField, Chip, CircularProgress } from "@mui/material";
 import useDebounce from "../../hooks/useDebounce";
 import { useStudentsQuery } from "../../hooks/useStudentExactQuery";
-import { useClassGroupsQuery } from "../../hooks/useSmsQuery";
+import { useClassGroupsQuery, useHostelGroupsQuery } from "../../hooks/useSmsQuery";
 
 // mode-aware recipient selector: individual (single student search), classwise
-// (multi-select of class+section groups), bulk (optional name/reg-no filter over
-// every active student in scope). Reports the selection back via onChange so the
-// parent can drive live preview + the confirm-send payload.
+// (multi-select of class+section groups), hostelwise (multi-select of hostels),
+// bulk (optional name/reg-no filter over every active student in scope). Reports
+// the selection back via onChange so the parent can drive live preview + the
+// confirm-send payload.
 export default function RecipientPicker({ mode, locationId, onChange }) {
   const [studentSearch, setStudentSearch] = useState("");
   const debouncedStudentSearch = useDebounce(studentSearch, 400);
@@ -17,12 +18,16 @@ export default function RecipientPicker({ mode, locationId, onChange }) {
   const classGroupsQuery = useClassGroupsQuery(locationId);
   const [selectedClasses, setSelectedClasses] = useState([]);
 
+  const hostelGroupsQuery = useHostelGroupsQuery(locationId);
+  const [selectedHostels, setSelectedHostels] = useState([]);
+
   const [bulkSearch, setBulkSearch] = useState("");
   const debouncedBulkSearch = useDebounce(bulkSearch, 400);
 
   useEffect(() => {
     setSelectedStudent(null);
     setSelectedClasses([]);
+    setSelectedHostels([]);
     setBulkSearch("");
   }, [mode]);
 
@@ -31,11 +36,13 @@ export default function RecipientPicker({ mode, locationId, onChange }) {
       onChange({ studentId: selectedStudent?._id || null });
     } else if (mode === "classwise") {
       onChange({ classIds: selectedClasses.map((c) => c._id) });
+    } else if (mode === "hostelwise") {
+      onChange({ hostelNames: selectedHostels.map((h) => h.hostel_name) });
     } else if (mode === "bulk") {
       onChange({ search: debouncedBulkSearch || undefined });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, selectedStudent, selectedClasses, debouncedBulkSearch]);
+  }, [mode, selectedStudent, selectedClasses, selectedHostels, debouncedBulkSearch]);
 
   if (mode === "individual") {
     const options = studentsQuery.data?.data || [];
@@ -89,6 +96,28 @@ export default function RecipientPicker({ mode, locationId, onChange }) {
           ))
         }
         renderInput={(params) => <TextField {...params} label="Select class(es) & section(s)" placeholder="Class - Section" />}
+      />
+    );
+  }
+
+  if (mode === "hostelwise") {
+    const groups = hostelGroupsQuery.data?.data || [];
+
+    return (
+      <Autocomplete
+        multiple
+        options={groups}
+        loading={hostelGroupsQuery.isLoading}
+        getOptionLabel={(option) => `${option.hostel_name} · ${option.count} students`}
+        isOptionEqualToValue={(option, value) => option.hostel_name === value.hostel_name}
+        value={selectedHostels}
+        onChange={(_, value) => setSelectedHostels(value)}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip label={option.hostel_name} {...getTagProps({ index })} key={option.hostel_name} size="small" />
+          ))
+        }
+        renderInput={(params) => <TextField {...params} label="Select hostel(s)" placeholder="Hostel name" />}
       />
     );
   }

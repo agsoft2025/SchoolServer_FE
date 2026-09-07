@@ -1,18 +1,34 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getClassGroups,
+  getHostelGroups,
   getSmsBatchById,
   getSmsBatchLogs,
   getSmsBatches,
+  getSmsTemplates,
   previewSmsRecipients,
   retrySmsFailed,
   sendSms,
 } from "../service/smsService";
 
+export const useSmsTemplatesQuery = () =>
+  useQuery({
+    queryKey: ["sms-templates"],
+    queryFn: getSmsTemplates,
+    staleTime: 5 * 60_000,
+  });
+
 export const useClassGroupsQuery = (locationId) =>
   useQuery({
     queryKey: ["sms-class-groups", locationId],
     queryFn: () => getClassGroups(locationId),
+    staleTime: 60_000,
+  });
+
+export const useHostelGroupsQuery = (locationId) =>
+  useQuery({
+    queryKey: ["sms-hostel-groups", locationId],
+    queryFn: () => getHostelGroups(locationId),
     staleTime: 60_000,
   });
 
