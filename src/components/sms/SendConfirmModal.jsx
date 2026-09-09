@@ -1,5 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Divider, Chip } from "@mui/material";
 import { Send } from "lucide-react";
+import SmsPhonePreview from "./SmsPhonePreview";
 
 export default function SendConfirmModal({ open, onClose, onConfirm, loading, count, sample = [], message, mode }) {
   return (
@@ -16,7 +17,9 @@ export default function SendConfirmModal({ open, onClose, onConfirm, loading, co
           You are about to send this message to <b>{count}</b> recipient{count === 1 ? "" : "s"} ({mode}).
         </Typography>
 
-        <div className="mt-4 bg-gray-50 border rounded-xl p-3 whitespace-pre-wrap text-sm text-gray-800">{message}</div>
+        <div className="mt-4">
+          <SmsPhonePreview text={message} />
+        </div>
 
         {sample.length > 0 && (
           <div className="mt-4">
