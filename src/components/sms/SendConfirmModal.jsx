@@ -2,7 +2,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, 
 import { Send } from "lucide-react";
 import SmsPhonePreview from "./SmsPhonePreview";
 
-export default function SendConfirmModal({ open, onClose, onConfirm, loading, count, sample = [], message, mode }) {
+export default function SendConfirmModal({ open, onClose, onConfirm, loading, count, sample = [], message, senderId, mode }) {
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle className="flex items-center gap-2">
@@ -18,8 +18,14 @@ export default function SendConfirmModal({ open, onClose, onConfirm, loading, co
         </Typography>
 
         <div className="mt-4">
-          <SmsPhonePreview text={message} />
+          <SmsPhonePreview text={message} senderId={senderId || "AGSWSL"} />
         </div>
+
+        {senderId && (
+          <p className="text-xs text-gray-600 mt-2">
+            Sender ID: <b>{senderId}</b>
+          </p>
+        )}
 
         {sample.length > 0 && (
           <div className="mt-4">
