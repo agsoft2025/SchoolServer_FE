@@ -18,7 +18,7 @@ const TABS = [
   { key: "history", label: "History", icon: HistoryIcon },
 ];
 
-const EMPTY_COMPOSER = { templateId: "", variables: {}, ready: false, preview: "" };
+const EMPTY_COMPOSER = { templateId: "", senderId: "", variables: {}, ready: false, preview: "" };
 
 export default function SmsCenter() {
   const { enqueueSnackbar } = useSnackbar();
@@ -56,6 +56,7 @@ export default function SmsCenter() {
       const res = await sendMutation.mutateAsync({
         mode: sendMode,
         templateId: composer.templateId,
+        senderId: composer.senderId,
         variables: composer.variables,
         locationId: selectedLocation?._id,
         ...selectionPayload,
@@ -137,6 +138,7 @@ export default function SmsCenter() {
         count={previewQuery.data?.count ?? 0}
         sample={previewQuery.data?.sample ?? []}
         message={composer.preview}
+        senderId={composer.senderId}
         mode={sendMode}
       />
 
